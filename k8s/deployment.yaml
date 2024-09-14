@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment
+spec:
+  replicas: 3                          # Number of pod replicas
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp-container
+        image: myapp:latest             # Docker image for your app
+        ports:
+        - containerPort: 8080           # Port for your app
+        resources:
+          requests:
+            memory: "512Mi"             # Minimum memory requested
+            cpu: "500m"                 # Minimum CPU requested (0.5 vCPU)
+          limits:
+            memory: "1Gi"               # Maximum memory allowed
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10                # Maximum CPU allowed (1 vCPU)
