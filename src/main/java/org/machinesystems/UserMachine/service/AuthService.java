@@ -29,15 +29,13 @@ public class AuthService {
             User user = userOpt.get();
 
             if (passwordEncoder.matches(password, user.getPassword())) {
+                // Generate token with all roles (not just one role)
                 Set<String> roles = user.getRoles();
                 
-                // Handle case when user has no roles
-                if (roles.isEmpty()) {
+                if (roles == null || roles.isEmpty()) {
                     throw new IllegalArgumentException("User has no roles assigned");
                 }
-
-                // Generate token with the first role for simplicity
-                return jwtTokenUtil.generateToken(user.getUsername(), roles.iterator().next());
+                return jwtTokenUtil.generateAccessToken(user.getUsername(), user.getRoles());
             } else {
                 throw new IllegalArgumentException("Invalid password");
             }

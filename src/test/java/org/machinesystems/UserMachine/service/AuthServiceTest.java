@@ -9,8 +9,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -48,6 +46,7 @@ class AuthServiceTest {
         user.setRoles(roles);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void testLoginUser_Success() {
         // Mock repository to return user when queried
@@ -55,7 +54,7 @@ class AuthServiceTest {
         // Mock passwordEncoder to match password
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         // Mock JWT token generation
-        when(jwtTokenUtil.generateToken(anyString(), anyString())).thenReturn("mockJwtToken");
+        when(jwtTokenUtil.generateAccessToken(anyString(), any(Set.class))).thenReturn("mockJwtToken");
 
         // Call the login service
         String token = authService.loginUser("john", "password");
@@ -87,7 +86,7 @@ class AuthServiceTest {
     @Test
     void testLoginUser_NoRolesAssigned() {
         // Set user with no roles
-        user.setRoles(Collections.emptySet());
+        user.setRoles(new HashSet<>());
 
         // Mock repository to return user
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
