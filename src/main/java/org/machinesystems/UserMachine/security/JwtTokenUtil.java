@@ -12,7 +12,7 @@ import java.util.Set;
 @Component
 public class JwtTokenUtil {
 
-    private static final String SECRET_KEY = "mySecretKey";  // Use a secure key in production
+    private static final String SECRET_KEY = "ImeanThisIsreallyquiteabigsecretkeyim69notsure89if1111weneedittobelongerbutherewego";  // Use a secure key in production
     private static final long ACCESS_TOKEN_EXPIRATION = 900000; // 15 minutes
     private static final long REFRESH_TOKEN_EXPIRATION = 86400000L; // 1 day (24 hours)
 

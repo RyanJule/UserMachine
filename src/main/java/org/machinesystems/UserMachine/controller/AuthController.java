@@ -79,6 +79,7 @@ public class AuthController {
                     "refreshToken", refreshToken
             ));
         } catch (Exception e) {
+            System.out.println(e);
             return ResponseEntity.status(401).body("Invalid username or password");
         }
     }
