@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -27,7 +27,7 @@ public class UserService {
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRoles(new HashSet<>()); // Add default roles, e.g., "ROLE_USER"
+        user.setRoles(Set.of("ROLE_USER"));
 
         return userRepository.save(user);
     }
@@ -36,5 +36,39 @@ public class UserService {
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    // Update user profile (username and email)
+    public User updateUserProfile(String username, String newUsername, String newEmail) {
+        User user = getUserByUsername(username);
+
+        // Check if new username or email already exists for another user
+        if (!newUsername.equals(user.getUsername()) && userRepository.findByUsername(newUsername).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (!newEmail.equals(user.getEmail()) && userRepository.findByEmail(newEmail).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        // Update username and email
+        user.setUsername(newUsername);
+        user.setEmail(newEmail);
+
+        return userRepository.save(user);
+    }
+
+    // Change user password (re-hash the new password)
+    public User changePassword(String username, String currentPassword, String newPassword) {
+        User user = getUserByUsername(username);
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Set and save new password
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        return userRepository.save(user);
     }
 }

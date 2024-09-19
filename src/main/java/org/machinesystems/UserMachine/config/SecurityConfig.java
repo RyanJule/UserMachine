@@ -43,9 +43,11 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // Disable CSRF
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/login", "/auth/register").permitAll() // Publicly accessible endpoints
+                .requestMatchers("/auth/login", "/auth/register", "/h2-console/**").permitAll() // Publicly accessible endpoints
                 .anyRequest().authenticated() // Protect all other endpoints
             )
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin()))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No sessions, stateless
             );
