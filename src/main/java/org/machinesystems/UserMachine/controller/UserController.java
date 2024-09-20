@@ -22,15 +22,21 @@ public class UserController {
     public ResponseEntity<?> updateProfile(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, String> request) {
-        
-        String currentUsername = userDetails.getUsername();
-        String newUsername = request.get("username");
-        String newEmail = request.get("email");
+        try{
+            String currentUsername = userDetails.getUsername();
+            System.out.println(currentUsername);
+            String newUsername = request.get("username");
+            String newEmail = request.get("email");
 
-        // Update the user's profile
-        User updatedUser = userService.updateUserProfile(currentUsername, newUsername, newEmail);
+            // Update the user's profile
+            User updatedUser = userService.updateUserProfile(currentUsername, newUsername, newEmail);
 
-        return ResponseEntity.ok(updatedUser);
+            return ResponseEntity.ok(updatedUser);
+        }
+        catch(Exception e) {
+            System.out.println(e);
+            return ResponseEntity.ok(userDetails);
+        }
     }
 
     // Change user password
