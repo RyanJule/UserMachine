@@ -3,97 +3,61 @@ package org.machinesystems.UserMachine.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.Map;
 import java.util.Set;
 
 @Component
 public class JwtTokenUtil {
 
-    private static final String SECRET_KEY = "ImeanThisIsreallyquiteabigsecretkeyim69notsure89if1111weneedittobelongerbutherewego";  // Use a secure key in production
-    private static final long ACCESS_TOKEN_EXPIRATION = 900000; // 15 minutes
-    private static final long REFRESH_TOKEN_EXPIRATION = 86400000L; // 1 day (24 hours)
+    private final String SECRET_KEY = "your_secret_keythiskey1234124couldevenebeevenenevenlongerer2348ifuwn";  // Use a secure key in production
 
-    // Generate signing key
+    // Generate a secret signing key
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    // Generate Access Token with user roles
+    // Generate JWT access token
     public String generateAccessToken(String username, Set<String> roles) {
-        Map<String, Object> claims = Map.of("roles", roles);  // Store roles as a claim
-
         return Jwts.builder()
-                .setClaims(claims)
                 .setSubject(username)
+                .claim("roles", roles)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15))  // 15-minute expiration
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // Generate Refresh Token (no roles required)
-    public String generateRefreshToken(String username) {
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    // Extract username from JWT token
+    // Extract the username from the JWT token
     public String getUsernameFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())  // Use parserBuilder to parse the token
+                .build()  // Build the parser
+                .parseClaimsJws(token)  // Parse the token and get claims
+                .getBody()
+                .getSubject();  // Extract the subject (username)
+    }
+
+    // Extract the expiration date from the JWT token
+    public Date getExpirationDateFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
-                .getSubject();
-    }
-
-    // Extract roles from Access Token
-    @SuppressWarnings("unchecked")
-    public Set<String> getRolesFromToken(String token) {
-        return (Set<String>) Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("roles", Set.class);
-    }
-
-    // Validate JWT token (for both access and refresh tokens)
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
-            return true;
-        } catch (JwtException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Check if a token is expired
-    public boolean isTokenExpired(String token) {
-        Date expiration = Jwts.parserBuilder().setSigningKey(getSigningKey()).build()
-                .parseClaimsJws(token)
-                .getBody()
                 .getExpiration();
-        return expiration.before(new Date());
     }
 
-    // Validate that the token is a refresh token (no roles should be present)
-    public boolean isRefreshToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    // Validate the token (check expiration and username match)
+    public boolean validateToken(String token, UserDetails userDetails) {
+        final String username = getUsernameFromToken(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
 
-        // Refresh token should not contain roles
-        return claims.get("roles") == null;
+    // Check if the token is expired
+    private boolean isTokenExpired(String token) {
+        return getExpirationDateFromToken(token).before(new Date());
     }
 }

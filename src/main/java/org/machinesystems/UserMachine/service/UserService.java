@@ -53,8 +53,6 @@ public class UserService {
         // Update username and email
         user.setUsername(newUsername);
         user.setEmail(newEmail);
-        System.out.println(user.getEmail());
-        System.out.println(user.getUsername());
         return userRepository.save(user);
     }
 

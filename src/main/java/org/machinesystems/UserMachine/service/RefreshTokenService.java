@@ -5,6 +5,7 @@ import org.machinesystems.UserMachine.model.User;
 import org.machinesystems.UserMachine.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -41,7 +42,7 @@ public class RefreshTokenService {
         }
     }
 
-    // Delete refresh token by user (used on logout)
+    @Transactional    // Delete refresh token by user (used on logout)
     public void deleteByUser(User user) {
         refreshTokenRepository.deleteByUser(user);
     }
