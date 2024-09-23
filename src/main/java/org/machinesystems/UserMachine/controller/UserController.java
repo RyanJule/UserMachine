@@ -1,19 +1,25 @@
 package org.machinesystems.UserMachine.controller;
 
-import org.machinesystems.UserMachine.service.BlacklistedTokenService;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+
 import org.machinesystems.UserMachine.model.User;
-import org.machinesystems.UserMachine.service.UserService;
 import org.machinesystems.UserMachine.security.JwtTokenUtil;
+import org.machinesystems.UserMachine.service.BlacklistedTokenService;
+import org.machinesystems.UserMachine.service.RefreshTokenService;
+import org.machinesystems.UserMachine.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.Date;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/user")
@@ -27,6 +33,9 @@ public class UserController {
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     // Update user profile (username and email)
     // Update user profile (username and email)
@@ -90,4 +99,35 @@ public class UserController {
 
         return ResponseEntity.ok("Password updated successfully");
     }
+
+    // Delete user by username (requires valid access token)
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteUser(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestHeader("Authorization") String authorizationHeader)  {
+
+        try {
+            String username = userDetails.getUsername();
+
+            // Delete the user's refresh token
+            User user = userService.getUserByUsername(username);
+            refreshTokenService.deleteByUser(user);
+
+            // Blacklist the current access token
+            String accessToken = authorizationHeader.substring(7);  // Remove "Bearer " prefix
+            Date accessTokenExpirationDate = jwtTokenUtil.getExpirationDateFromToken(accessToken);
+            blacklistedTokenService.blacklistToken(accessToken, accessTokenExpirationDate);
+
+            // Delete the user from the database
+            userService.deleteUserByUsername(username);
+
+            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to delete user"));
+        }
+    }
+
 }

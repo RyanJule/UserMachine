@@ -70,4 +70,13 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    public void deleteUserByUsername(String username) {
+        if (userRepository.findByUsername(username).isPresent()) {
+            userRepository.deleteByUsername(username);
+        } else {
+            throw new IllegalArgumentException("User not found");
+        }
+    }
+    
 }
