@@ -3,10 +3,17 @@ package org.machinesystems.UserMachine.service;
 import org.machinesystems.UserMachine.model.User;
 import org.machinesystems.UserMachine.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import net.bytebuddy.utility.RandomString;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 import java.util.Set;
+import java.io.UnsupportedEncodingException;
 
 @Service
 public class UserService {
@@ -17,19 +24,59 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JavaMailSender mailSender;
+
     // Register a new user
-    public User registerUser(String username, String email, String password) {
+    public User registerUser(String username, String email, String password) 
+            throws UnsupportedEncodingException, MessagingException {
         if (userRepository.findByUsername(username).isPresent() || userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Username or email already exists");
         }
+
+        String randomCode = RandomString.make(64);
 
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setRoles(Set.of("ROLE_USER"));
+        user.setVerificationCode(randomCode);
+        user.setEnabled(false);
+        sendVerificationEmail(user, randomCode);
+        userRepository.save(user);
 
-        return userRepository.save(user);
+        return user;
+    }
+
+    private void sendVerificationEmail(User user, String siteURL)
+            throws MessagingException, UnsupportedEncodingException {
+        String toAddress = user.getEmail();
+        String fromAddress = "Your email address";
+        String senderName = "Your company name";
+        String subject = "Please verify your registration";
+        String content = "Dear [[name]],<br>"
+                + "Please click the link below to verify your registration:<br>"
+                + "<h3><a href=\"[[URL]]\" target=\"_self\">VERIFY</a></h3>"
+                + "Thank you,<br>"
+                + "Your company name.";
+        
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message);
+        
+        helper.setFrom(fromAddress, senderName);
+        helper.setTo(toAddress);
+        helper.setSubject(subject);
+        
+        content = content.replace("[[name]]", user.getUsername());
+        String verifyURL = siteURL + "/verify?code=" + user.getVerificationCode();
+        
+        content = content.replace("[[URL]]", verifyURL);
+        
+        helper.setText(content, true);
+        
+        mailSender.send(message);
+        
     }
 
     // Get user by username

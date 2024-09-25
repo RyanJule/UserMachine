@@ -7,8 +7,13 @@ import org.machinesystems.UserMachine.repository.UserRepository;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,6 +28,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JavaMailSender mailSender;  // Mock the mail sender
 
     @InjectMocks
     private UserService userService;
@@ -41,11 +49,18 @@ class UserServiceTest {
     }
 
     @Test
-    void testRegisterUser_Success() {
+    void testRegisterUser_Success() throws UnsupportedEncodingException, MessagingException {
         // Mock behavior for existing checks and password encoding
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
+
+        // Mock the MimeMessage creation
+        MimeMessage mimeMessage = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        // Mock the behavior for the MimeMessageHelper
+        doNothing().when(mailSender).send(any(MimeMessage.class));  // Mock the sending email
 
         // Use Mockito's Answer to return the same user passed into save()
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));

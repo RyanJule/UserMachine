@@ -26,6 +26,11 @@ public class User {
     @Column(name = "role")
     private Set<String> roles = new HashSet<>();
 
+    @Column(name = "verification_code", length = 64)
+    private String verificationCode;
+
+    private boolean enabled;
+
     // Getters and setters
     public Long getId() {
         return id;
@@ -65,5 +70,21 @@ public class User {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public boolean isEnabled(){
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled){
+        this.enabled = enabled;
     }
 }

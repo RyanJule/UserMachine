@@ -1,5 +1,6 @@
 package org.machinesystems.UserMachine.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.mail.MessagingException;
 
 @RestController
 @RequestMapping("/auth")
@@ -47,7 +50,7 @@ public class AuthController {
 
     // Register a new user
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> request) throws UnsupportedEncodingException, MessagingException {
         String username = request.get("username");
         String email = request.get("email");
         String password = request.get("password");
