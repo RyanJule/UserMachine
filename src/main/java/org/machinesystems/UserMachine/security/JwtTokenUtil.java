@@ -12,8 +12,7 @@ import java.util.Set;
 @Component
 public class JwtTokenUtil {
 
-    private final String SECRET_KEY = "your_secret_keythiskey1234124couldevenebeevenenevenlongerer2348ifuwn";  // Use a secure key in production
-
+    static final String SECRET_KEY = DotEnvUtil.SECRET_KEY;  // Use a secure key in production
     // Generate a secret signing key
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());

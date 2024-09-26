@@ -28,6 +28,7 @@ public class UserService {
     @Autowired
     private JavaMailSender mailSender;
     static final String EMAIL = DotEnvUtil.EMAIL;
+    
     // Register a new user
     public User registerUser(String username, String email, String password) 
             throws UnsupportedEncodingException, MessagingException {
