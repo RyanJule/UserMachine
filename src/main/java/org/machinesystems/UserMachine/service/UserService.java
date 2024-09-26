@@ -1,19 +1,20 @@
 package org.machinesystems.UserMachine.service;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Set;
+
 import org.machinesystems.UserMachine.model.User;
 import org.machinesystems.UserMachine.repository.UserRepository;
+import org.machinesystems.UserMachine.security.DotEnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import net.bytebuddy.utility.RandomString;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-
-import java.util.Set;
-import java.io.UnsupportedEncodingException;
+import net.bytebuddy.utility.RandomString;
 
 @Service
 public class UserService {
@@ -26,7 +27,7 @@ public class UserService {
 
     @Autowired
     private JavaMailSender mailSender;
-
+    static final String EMAIL = DotEnvUtil.EMAIL;
     // Register a new user
     public User registerUser(String username, String email, String password) 
             throws UnsupportedEncodingException, MessagingException {
@@ -43,7 +44,7 @@ public class UserService {
         user.setRoles(Set.of("ROLE_USER"));
         user.setVerificationCode(randomCode);
         user.setEnabled(false);
-        sendVerificationEmail(user, randomCode);
+        sendVerificationEmail(user, "http://localhost:8080/auth");
         userRepository.save(user);
 
         return user;
@@ -52,7 +53,7 @@ public class UserService {
     private void sendVerificationEmail(User user, String siteURL)
             throws MessagingException, UnsupportedEncodingException {
         String toAddress = user.getEmail();
-        String fromAddress = "Your email address";
+        String fromAddress = EMAIL;
         String senderName = "Your company name";
         String subject = "Please verify your registration";
         String content = "Dear [[name]],<br>"
@@ -123,6 +124,20 @@ public class UserService {
             userRepository.deleteByUsername(username);
         } else {
             throw new IllegalArgumentException("User not found");
+        }
+    }
+
+    public boolean verify(String verificationCode) {
+        User user = userRepository.findbyVerificationCode(verificationCode);
+
+        if (user == null || user.isEnabled()) {
+            return false;
+        } else {
+            user.setVerificationCode(null);
+            user.setEnabled(true);
+            userRepository.save(user);
+
+            return true;
         }
     }
     

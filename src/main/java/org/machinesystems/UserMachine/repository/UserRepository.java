@@ -2,6 +2,7 @@ package org.machinesystems.UserMachine.repository;
 
 import org.machinesystems.UserMachine.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import jakarta.transaction.Transactional;
 
@@ -13,4 +14,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Transactional
     void deleteByUsername(String username);
+
+    @Query("SELECT u FROM User u WHERE u.verificationCode = ?1")
+    public User findbyVerificationCode(String code);
 }

@@ -13,12 +13,14 @@ import org.machinesystems.UserMachine.service.CustomUserDetailsService;
 import org.machinesystems.UserMachine.service.RefreshTokenService;
 import org.machinesystems.UserMachine.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,6 +66,19 @@ public class AuthController {
         ));
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyUser(@Param("code") String code) {
+        if (userService.verify(code)) {
+            return ResponseEntity.status(201).body(Map.of(
+                "message", "User verified"
+            ));
+        } else {
+            return ResponseEntity.status(400).body(Map.of(
+                "message", "User not verified"
+            ));
+        }
+    }
+
     // Login user and generate JWT tokens
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> request) {
@@ -76,20 +91,27 @@ public class AuthController {
     
             // Load user details
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-    
-            // Convert GrantedAuthority to Set<String> for roles
-            Set<String> roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toSet());
-    
-            // Generate access token and refresh token
-            String accessToken = jwtTokenUtil.generateAccessToken(userDetails.getUsername(), roles);
-            String refreshToken = refreshTokenService.createRefreshToken(userService.getUserByUsername(username)).getToken();
-    
-            return ResponseEntity.ok(Map.of(
-                    "accessToken", accessToken,
-                    "refreshToken", refreshToken
-            ));
+
+            if (!userDetails.isEnabled()) {
+                return ResponseEntity.status(400)
+                    .body(Map.of("message", "User is not authenticated"));
+            }
+            
+            else {
+                // Convert GrantedAuthority to Set<String> for roles
+                Set<String> roles = userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toSet());
+        
+                // Generate access token and refresh token
+                String accessToken = jwtTokenUtil.generateAccessToken(userDetails.getUsername(), roles);
+                String refreshToken = refreshTokenService.createRefreshToken(userService.getUserByUsername(username)).getToken();
+        
+                return ResponseEntity.ok(Map.of(
+                        "accessToken", accessToken,
+                        "refreshToken", refreshToken
+                ));
+            }
         } catch (Exception e) {
             e.printStackTrace();  // Add better logging in production
             return ResponseEntity.status(401).body("Invalid username or password");
