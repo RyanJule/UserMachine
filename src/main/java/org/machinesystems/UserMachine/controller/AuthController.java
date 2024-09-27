@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.machinesystems.UserMachine.service.AuthService;
 import org.machinesystems.UserMachine.model.User;
 import org.machinesystems.UserMachine.security.JwtTokenUtil;
 import org.machinesystems.UserMachine.service.BlacklistedTokenService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.mail.MessagingException;
@@ -50,6 +52,9 @@ public class AuthController {
     @Autowired
     private RefreshTokenService refreshTokenService;
 
+    @Autowired
+    private AuthService authService;
+
     // Register a new user
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody Map<String, String> request) throws UnsupportedEncodingException, MessagingException {
@@ -68,7 +73,7 @@ public class AuthController {
 
     @GetMapping("/verify")
     public ResponseEntity<?> verifyUser(@Param("code") String code) {
-        if (userService.verify(code)) {
+        if (authService.verify(code)) {
             return ResponseEntity.status(201).body(Map.of(
                 "message", "User verified"
             ));
@@ -194,6 +199,45 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Logout failed: " + e.getMessage()));
+        }
+    }
+    // requests password reset
+    @PostMapping("/reset-password-request")
+    public ResponseEntity<?> requestPasswordReset(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            authService.resetPassword(email, "http://localhost:8080");
+            return ResponseEntity.ok(Map.of("message", "Password reset email sent"));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("message", "Error sending password reset email"));
+        }
+    }
+
+    // Reset password
+    // Serve the reset password form
+    @GetMapping("/reset-password")
+    public String showResetPasswordForm(@RequestParam("token") String token) {
+        // Simple HTML form to submit the new password
+        return "<html>" +
+                "<body>" +
+                "<h2>Reset Password</h2>" +
+                "<form action='/auth/reset-password' method='post'>" +
+                "<input type='hidden' name='token' value='" + token + "' />" + // Hidden field for token
+                "<label for='newPassword'>New Password:</label><br/>" +
+                "<input type='password' id='newPassword' name='newPassword'><br/>" +
+                "<button type='submit'>Reset Password</button>" +
+                "</form>" +
+                "</body>" +
+                "</html>";
+    }
+
+    // Process the password reset
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam("token") String token, @RequestParam("newPassword") String newPassword) {
+        if (authService.verifyPasswordReset(token, newPassword)) {
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
+        } else {
+            return ResponseEntity.status(400).body(Map.of("message", "Invalid or expired token"));
         }
     }
 }

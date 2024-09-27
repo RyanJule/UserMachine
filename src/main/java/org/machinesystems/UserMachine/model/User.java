@@ -1,6 +1,8 @@
 package org.machinesystems.UserMachine.model;
 
 import jakarta.persistence.*;
+
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,6 +32,12 @@ public class User {
     private String verificationCode;
 
     private boolean enabled;
+
+    @Column(name = "reset_password_token")
+    private String resetPasswordToken;
+
+    @Column(name = "reset_password_expiry")
+    private Date resetPasswordExpiry;
 
     // Getters and setters
     public Long getId() {
@@ -86,5 +94,21 @@ public class User {
 
     public void setEnabled(boolean enabled){
         this.enabled = enabled;
+    }
+
+    public String getResetPasswordToken() {
+        return resetPasswordToken;
+    }
+
+    public void setResetPasswordToken(String resetPasswordToken) {
+        this.resetPasswordToken = resetPasswordToken;
+    }
+
+    public Date getResetPasswordExpiry() {
+        return resetPasswordExpiry;
+    }
+
+    public void setResetPasswordExpiry(Date resetPasswordExpiry) {
+        this.resetPasswordExpiry = resetPasswordExpiry;
     }
 }

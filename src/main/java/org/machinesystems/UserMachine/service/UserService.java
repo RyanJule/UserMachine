@@ -1,6 +1,8 @@
 package org.machinesystems.UserMachine.service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
 
 import org.machinesystems.UserMachine.model.User;
@@ -87,6 +89,12 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
+    // Get user by username
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
     // Update user profile (username and email)
     public User updateUserProfile(String username, String newUsername, String newEmail) {
         User user = getUserByUsername(username);
@@ -127,19 +135,73 @@ public class UserService {
             throw new IllegalArgumentException("User not found");
         }
     }
+    public void sendPasswordResetLink(String email, String siteURL) throws UnsupportedEncodingException, MessagingException {
+        Optional<User> userOpt = userRepository.findByEmail(email);
 
-    public boolean verify(String verificationCode) {
-        User user = userRepository.findbyVerificationCode(verificationCode);
-
-        if (user == null || user.isEnabled()) {
-            return false;
-        } else {
-            user.setVerificationCode(null);
-            user.setEnabled(true);
-            userRepository.save(user);
-
-            return true;
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("Email not found");
         }
+
+        User user = userOpt.get();
+        String resetToken = RandomString.make(64);
+        user.setResetPasswordToken(resetToken);
+        user.setResetPasswordExpiry(new Date(System.currentTimeMillis() + 15 * 60 * 1000)); // 15 minutes expiry
+
+        userRepository.save(user);
+        sendPasswordResetEmail(user, siteURL);
     }
-    
+
+    private void sendPasswordResetEmail(User user, String siteURL) throws MessagingException, UnsupportedEncodingException {
+        String toAddress = user.getEmail();
+        String fromAddress = "youremail@example.com";
+        String senderName = "Your Company Name";
+        String subject = "Reset your password";
+        String content = "Dear [[name]],<br>"
+                + "You have requested to reset your password.<br>"
+                + "Click the link below to reset your password:<br>"
+                + "<h3><a href=\"[[URL]]\" target=\"_self\">RESET PASSWORD</a></h3>"
+                + "Ignore this email if you do not want to change your password.<br>"
+                + "Thank you,<br>"
+                + "Your Company Name.";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message);
+
+        helper.setFrom(fromAddress, senderName);
+        helper.setTo(toAddress);
+        helper.setSubject(subject);
+
+        content = content.replace("[[name]]", user.getUsername());
+        String resetURL = siteURL + "/auth/reset-password?token=" + user.getResetPasswordToken();
+        content = content.replace("[[URL]]", resetURL);
+
+        helper.setText(content, true);
+
+        mailSender.send(message);
+    }
+
+    // Verify password reset token and reset the password
+    public boolean verifyPasswordResetToken(String token, String newPassword) {
+        Optional<User> userOpt = userRepository.findByResetPasswordToken(token);
+
+        if (userOpt.isEmpty()) {
+            return false;
+        }
+
+        User user = userOpt.get();
+
+        // Check if the token is still valid
+        if (user.getResetPasswordExpiry().before(new Date())) {
+            return false;
+        }
+
+        // Reset the password and clear the token
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetPasswordToken(null);
+        user.setResetPasswordExpiry(null);
+
+        userRepository.save(user);
+
+        return true;
+    }
 }

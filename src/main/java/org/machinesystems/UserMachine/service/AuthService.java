@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -21,6 +24,9 @@ public class AuthService {
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private UserService userService;
 
     public String loginUser(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
@@ -42,5 +48,33 @@ public class AuthService {
         } else {
             throw new IllegalArgumentException("User not found");
         }
+    }
+
+    public boolean verify(String verificationCode) {
+        User user = userRepository.findbyVerificationCode(verificationCode);
+
+        if (user == null || user.isEnabled()) {
+            return false;
+        } else {
+            user.setVerificationCode(null);
+            user.setEnabled(true);
+            userRepository.save(user);
+
+            return true;
+        }
+    }
+    public void resetPassword(String email, String siteURL) throws MessagingException, UnsupportedEncodingException {
+        User user = userService.getUserByEmail(email);
+        if (user.isEnabled()) {
+            userService.sendPasswordResetLink(email, siteURL);
+        }
+        else {
+            throw new IllegalArgumentException("User not found");
+        }
+    }
+
+    // Verify token and reset password
+    public boolean verifyPasswordReset(String token, String newPassword) {
+        return userService.verifyPasswordResetToken(token, newPassword);
     }
 }
