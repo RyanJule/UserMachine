@@ -32,7 +32,8 @@ public class UserService {
     static final String EMAIL = DotEnvUtil.EMAIL;
     
     // Register a new user
-    public User registerUser(String username, String email, String password) 
+    // Register a new user with specified roles
+    public User registerUser(String username, String email, String password, Set<String> roles) 
             throws UnsupportedEncodingException, MessagingException {
         if (userRepository.findByUsername(username).isPresent() || userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Username or email already exists");
@@ -44,9 +45,11 @@ public class UserService {
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRoles(Set.of("ROLE_USER"));
+        user.setRoles(roles != null && !roles.isEmpty() ? roles : Set.of("ROLE_USER"));  // Default to "ROLE_USER"
         user.setVerificationCode(randomCode);
         user.setEnabled(false);
+        
+        // Send verification email
         sendVerificationEmail(user, "http://localhost:8080/auth");
         userRepository.save(user);
 
@@ -204,4 +207,20 @@ public class UserService {
 
         return true;
     }
+
+    // Increment login attempts for a user
+    public void incrementLoginAttempts(String username) {
+        User user = getUserByUsername(username);
+        int currentAttempts = user.getLoginAttempts();
+        user.setLoginAttempts(currentAttempts + 1);
+        userRepository.save(user);
+    }
+
+    // Reset login attempts for a user
+    public void resetLoginAttempts(String username) {
+        User user = getUserByUsername(username);
+        user.setLoginAttempts(0);
+        userRepository.save(user);
+    }
+
 }

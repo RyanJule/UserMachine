@@ -15,6 +15,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -66,7 +67,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Call the service
-        User registeredUser = userService.registerUser("john", "john@example.com", "password");
+        User registeredUser = userService.registerUser("john", "john@example.com", "password", Set.of("ROLE_USER"));
 
         // Verify that the password was encoded
         assertEquals("hashedPassword", registeredUser.getPassword());
@@ -80,7 +81,7 @@ class UserServiceTest {
 
         // Test that the service throws an exception
         assertThrows(IllegalArgumentException.class, () -> {
-            userService.registerUser("john", "john@example.com", "password");
+            userService.registerUser("john", "john@example.com", "password", Set.of("ROLE_USER"));
         });
     }
 }

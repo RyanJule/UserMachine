@@ -11,10 +11,11 @@ import jakarta.mail.MessagingException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class AuthService {
+
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
 
     @Autowired
     private UserRepository userRepository;
@@ -34,20 +35,41 @@ public class AuthService {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
 
+            // Check if the account is locked
+            if (user.isAccountLocked()) {
+                throw new IllegalArgumentException("Your account is locked due to too many failed login attempts.");
+            }
+
+            // Validate password
             if (passwordEncoder.matches(password, user.getPassword())) {
-                // Generate token with all roles (not just one role)
-                Set<String> roles = user.getRoles();
-                
-                if (roles == null || roles.isEmpty()) {
-                    throw new IllegalArgumentException("User has no roles assigned");
-                }
+                // Successful login, reset login attempts
+                user.resetLoginAttempts();
+                userRepository.save(user);
+
                 return jwtTokenUtil.generateAccessToken(user.getUsername(), user.getRoles());
             } else {
+                // Increment login attempts and lock account if necessary
+                user.setLoginAttempts(user.getLoginAttempts() + 1);
+
+                if (user.getLoginAttempts() >= MAX_LOGIN_ATTEMPTS) {
+                    user.setAccountLocked(true);
+                }
+
+                userRepository.save(user);
                 throw new IllegalArgumentException("Invalid password");
             }
         } else {
             throw new IllegalArgumentException("User not found");
         }
+    }
+
+    // Method for admin to reset login attempts
+    public void resetLoginAttempts(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.resetLoginAttempts();
+        userRepository.save(user);
     }
 
     public boolean verify(String verificationCode) {

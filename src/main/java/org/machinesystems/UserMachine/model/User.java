@@ -31,6 +31,12 @@ public class User {
     @Column(name = "verification_code", length = 64)
     private String verificationCode;
 
+    @Column(nullable = false)
+    private int loginAttempts = 0;
+
+    @Column(nullable = false)
+    private boolean accountLocked = false;
+
     private boolean enabled;
 
     @Column(name = "reset_password_token")
@@ -110,5 +116,26 @@ public class User {
 
     public void setResetPasswordExpiry(Date resetPasswordExpiry) {
         this.resetPasswordExpiry = resetPasswordExpiry;
+    }
+
+    public int getLoginAttempts() {
+        return loginAttempts;
+    }
+
+    public void setLoginAttempts(int loginAttempts) {
+        this.loginAttempts = loginAttempts;
+    }
+
+    public boolean isAccountLocked() {
+        return accountLocked;
+    }
+
+    public void setAccountLocked(boolean accountLocked) {
+        this.accountLocked = accountLocked;
+    }
+
+    public void resetLoginAttempts() {
+        this.loginAttempts = 0;
+        this.accountLocked = false;
     }
 }

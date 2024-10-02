@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.machinesystems.UserMachine.service.AuthService;
 import org.machinesystems.UserMachine.model.User;
+import org.machinesystems.UserMachine.repository.UserRepository;
 import org.machinesystems.UserMachine.security.JwtTokenUtil;
 import org.machinesystems.UserMachine.service.BlacklistedTokenService;
 import org.machinesystems.UserMachine.service.CustomUserDetailsService;
@@ -35,6 +36,9 @@ import jakarta.mail.MessagingException;
 public class AuthController {
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private AuthenticationManager authenticationManager;
 
     @Autowired
@@ -55,15 +59,17 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
-    // Register a new user
+    // Register a new user with default role "ROLE_USER"
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> request) throws UnsupportedEncodingException, MessagingException {
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> request) 
+            throws UnsupportedEncodingException, MessagingException {
+        
         String username = request.get("username");
         String email = request.get("email");
         String password = request.get("password");
 
-        // Register user using UserService
-        User newUser = userService.registerUser(username, email, password);
+        // Register the user with default "ROLE_USER"
+        User newUser = userService.registerUser(username, email, password, Set.of("ROLE_USER"));
 
         return ResponseEntity.status(201).body(Map.of(
                 "message", "User registered successfully",
@@ -89,11 +95,22 @@ public class AuthController {
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
-    
+
         try {
+            // Get the user to check login attempts
+            User user = userService.getUserByUsername(username);
+            
+            // Check if the user has exceeded maximum login attempts
+            if (user.getLoginAttempts() >= 5) {
+                user.setAccountLocked(true);
+                userRepository.save(user);
+                return ResponseEntity.status(403)
+                    .body(Map.of("message", "User account locked due to too many failed login attempts. Please contact support."));
+            }
+
             // Authenticate the user
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-    
+
             // Load user details
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
@@ -101,25 +118,31 @@ public class AuthController {
                 return ResponseEntity.status(400)
                     .body(Map.of("message", "User is not authenticated"));
             }
-            
-            else {
-                // Convert GrantedAuthority to Set<String> for roles
-                Set<String> roles = userDetails.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toSet());
-        
-                // Generate access token and refresh token
-                String accessToken = jwtTokenUtil.generateAccessToken(userDetails.getUsername(), roles);
-                String refreshToken = refreshTokenService.createRefreshToken(userService.getUserByUsername(username)).getToken();
-        
-                return ResponseEntity.ok(Map.of(
-                        "accessToken", accessToken,
-                        "refreshToken", refreshToken
-                ));
-            }
+
+            // Reset login attempts on successful login
+            userService.resetLoginAttempts(username);
+
+            // Convert GrantedAuthority to Set<String> for roles
+            Set<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toSet());
+
+            // Generate access token and refresh token
+            String accessToken = jwtTokenUtil.generateAccessToken(userDetails.getUsername(), roles);
+            String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
+
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", accessToken,
+                    "refreshToken", refreshToken
+            ));
+
         } catch (Exception e) {
             e.printStackTrace();  // Add better logging in production
-            return ResponseEntity.status(401).body("Invalid username or password");
+
+            // Increment failed login attempts
+            userService.incrementLoginAttempts(username);
+
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password"));
         }
     }
 

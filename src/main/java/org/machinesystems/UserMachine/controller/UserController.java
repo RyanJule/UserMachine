@@ -129,5 +129,4 @@ public class UserController {
                     .body(Map.of("message", "Failed to delete user"));
         }
     }
-
 }
