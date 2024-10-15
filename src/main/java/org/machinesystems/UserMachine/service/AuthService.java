@@ -42,6 +42,12 @@ public class AuthService {
 
             // Validate password
             if (passwordEncoder.matches(password, user.getPassword())) {
+                
+                // Check if user has roles assigned
+                if (user.getRoles() == null || user.getRoles().isEmpty()) {
+                    throw new IllegalArgumentException("User has no roles assigned.");
+                }
+
                 // Successful login, reset login attempts
                 user.resetLoginAttempts();
                 userRepository.save(user);
