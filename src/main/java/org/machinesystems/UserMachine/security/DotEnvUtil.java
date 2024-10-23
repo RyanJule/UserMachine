@@ -1,14 +1,12 @@
 package org.machinesystems.UserMachine.security;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class DotEnvUtil {
-    static Dotenv dotenv = Dotenv.load();
-    public static final String EMAIL = dotenv.get("EMAIL");
-    public static final String PASSWORD = dotenv.get("PASSWORD");
-    public static final String SECRET_KEY = dotenv.get("SECRET_KEY");
+    public static final String EMAIL = System.getenv("SMTP_EMAIL");
+    public static final String PASSWORD = System.getenv("SMTP_PASSWORD");
+    public static final String SECRET_KEY = System.getenv("SMTP_SECRET_KEY");
 
     public static void loadDotenv() {
         System.setProperty("spring.mail.username", EMAIL);

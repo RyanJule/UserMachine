@@ -3,6 +3,7 @@ package org.machinesystems.UserMachine.security;
 import org.machinesystems.UserMachine.service.BlacklistedTokenService;
 import org.machinesystems.UserMachine.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +24,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private JwtTokenUtil jwtTokenUtil;
 
     @Autowired
+    @Lazy
     private CustomUserDetailsService customUserDetailsService;
 
     @Autowired

@@ -1,20 +1,55 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myapp-deployment
+  name: user-machine-deployment
 spec:
   replicas: 3                          # Number of pod replicas
   selector:
     matchLabels:
-      app: myapp
+      app: user-machine
   template:
     metadata:
       labels:
-        app: myapp
+        app: user-machine
     spec:
       containers:
-      - name: myapp-container
-        image: myapp:latest             # Docker image for your app
+      - name: user-machine-container
+        image: ryanjule/user-machine:latest             # Docker image for your app
+        env:
+        - name: SMTP_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_EMAIL
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_PASSWORD
+        - name: SMTP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smtp-secret
+              key: SMTP_SECRET_KEY
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
         ports:
         - containerPort: 8080           # Port for your app
         resources:
@@ -24,15 +59,3 @@ spec:
           limits:
             memory: "1Gi"               # Maximum memory allowed
             cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10                # Maximum CPU allowed (1 vCPU)

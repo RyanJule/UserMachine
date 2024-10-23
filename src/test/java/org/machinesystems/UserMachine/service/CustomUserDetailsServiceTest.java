@@ -3,16 +3,13 @@ package org.machinesystems.UserMachine.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.machinesystems.UserMachine.model.User;
-import org.machinesystems.UserMachine.repository.UserRepository;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,7 +18,7 @@ import static org.mockito.Mockito.*;
 class CustomUserDetailsServiceTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserService userService;
 
     @InjectMocks
     private CustomUserDetailsService customUserDetailsService;
@@ -47,7 +44,7 @@ class CustomUserDetailsServiceTest {
     @Test
     void testLoadUserByUsername_Success() {
         // Mock repository to return the user when queried by username
-        when(userRepository.findByUsername("john")).thenReturn(Optional.of(user));
+        when(userService.getUserByUsername("john")).thenReturn(user);
 
         // Call the service method
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("john");
@@ -66,21 +63,22 @@ class CustomUserDetailsServiceTest {
                 .anyMatch(role -> role.equals("ROLE_ADMIN")));
 
         // Verify that the repository was called with the correct username
-        verify(userRepository).findByUsername("john");
+        verify(userService).getUserByUsername("john");
     }
 
     @Test
     void testLoadUserByUsername_UserNotFound() {
         // Mock repository to return an empty result
-        when(userRepository.findByUsername("invalidUser")).thenReturn(Optional.empty());
+        when(userService.getUserByUsername("invalidUser"))
+            .thenThrow(new IllegalArgumentException("User not found"));
 
         // Expect UsernameNotFoundException
-        assertThrows(UsernameNotFoundException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             customUserDetailsService.loadUserByUsername("invalidUser");
         });
 
         // Verify the repository was called
-        verify(userRepository).findByUsername("invalidUser");
+        verify(userService).getUserByUsername("invalidUser");
     }
 }
 

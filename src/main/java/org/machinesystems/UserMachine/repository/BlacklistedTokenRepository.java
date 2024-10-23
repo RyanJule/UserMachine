@@ -2,6 +2,7 @@ package org.machinesystems.UserMachine.repository;
 
 import org.machinesystems.UserMachine.model.BlacklistedToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.util.Date;
 import java.util.Optional;
 
