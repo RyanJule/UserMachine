@@ -1,20 +1,22 @@
 package org.machinesystems.UserMachine.service;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.machinesystems.UserMachine.model.User;
 import org.machinesystems.UserMachine.repository.UserRepository;
 import org.machinesystems.UserMachine.security.JwtTokenUtil;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class AuthServiceTest {
@@ -27,6 +29,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtTokenUtil jwtTokenUtil;
+
+    @Mock
+    private AuditService auditService; // Mock AuditService
 
     @InjectMocks
     private AuthService authService;
@@ -62,6 +67,7 @@ class AuthServiceTest {
         // Verify the result
         assertEquals("mockJwtToken", token);
         verify(userRepository).findByUsername("john");
+        verify(auditService).logAuditEvent(anyString(), anyString(), anyString(), anyString(), isNull());
     }
 
     @Test
@@ -72,6 +78,7 @@ class AuthServiceTest {
         assertThrows(IllegalArgumentException.class, () -> {
             authService.loginUser("john", "wrongPassword");
         });
+        verify(auditService).logAuditEvent(anyString(), anyString(), contains("Login failed"), anyString(), anyString());
     }
 
     @Test

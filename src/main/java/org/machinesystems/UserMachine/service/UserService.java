@@ -56,7 +56,7 @@ public class UserService {
         return user;
     }
 
-    private void sendVerificationEmail(User user, String siteURL)
+    void sendVerificationEmail(User user, String siteURL)
             throws MessagingException, UnsupportedEncodingException {
         String toAddress = user.getEmail();
         String fromAddress = EMAIL;

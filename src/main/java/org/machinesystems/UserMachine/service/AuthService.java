@@ -29,46 +29,51 @@ public class AuthService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AuditService auditService;
+
     public String loginUser(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            // Check if the account is locked
-            if (user.isAccountLocked()) {
-                throw new IllegalArgumentException("Your account is locked due to too many failed login attempts.");
-            }
-
-            // Validate password
-            if (passwordEncoder.matches(password, user.getPassword())) {
-                
-                // Check if user has roles assigned
-                if (user.getRoles() == null || user.getRoles().isEmpty()) {
-                    throw new IllegalArgumentException("User has no roles assigned.");
-                }
-
-                // Successful login, reset login attempts
-                user.resetLoginAttempts();
-                userRepository.save(user);
-
-                return jwtTokenUtil.generateAccessToken(user.getUsername(), user.getRoles());
-            } else {
-                // Increment login attempts and lock account if necessary
-                user.setLoginAttempts(user.getLoginAttempts() + 1);
-
-                if (user.getLoginAttempts() >= MAX_LOGIN_ATTEMPTS) {
-                    user.setAccountLocked(true);
-                }
-
-                userRepository.save(user);
-                throw new IllegalArgumentException("Invalid password");
-            }
-        } else {
+    
+        if (userOpt.isEmpty()) {
             throw new IllegalArgumentException("User not found");
         }
+    
+        User user = userOpt.get();
+    
+        // Check if the account is locked
+        if (user.isAccountLocked()) {
+            auditService.logAuditEvent("ERROR", "AuthService", "Account locked: " + username, Thread.currentThread().getName(), null);
+            throw new IllegalArgumentException("Account is locked due to too many failed login attempts.");
+        }
+    
+        // Validate password
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            user.incrementLoginAttempts();
+    
+            if (user.getLoginAttempts() >= MAX_LOGIN_ATTEMPTS) {
+                user.setAccountLocked(true);
+            }
+    
+            userRepository.save(user);
+            auditService.logAuditEvent("ERROR", "AuthService", "Login failed: Invalid password attempt: " + username, Thread.currentThread().getName(), "IllegalArgumentException");
+            throw new IllegalArgumentException("Invalid password");
+        }
+    
+        // Check if user has roles assigned
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            throw new IllegalArgumentException("User has no roles assigned.");
+        }
+    
+        // Successful login: reset login attempts and generate token
+        user.resetLoginAttempts();
+        userRepository.save(user);
+    
+        auditService.logAuditEvent("INFO", "AuthService", "User login successful: " + username, Thread.currentThread().getName(), null);
+    
+        return jwtTokenUtil.generateAccessToken(user.getUsername(), user.getRoles());
     }
-
+    
     // Method for admin to reset login attempts
     public void resetLoginAttempts(String username) {
         User user = userRepository.findByUsername(username)

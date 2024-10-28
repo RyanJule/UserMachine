@@ -4,14 +4,11 @@ import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.machinesystems.UserMachine.service.AuthService;
 import org.machinesystems.UserMachine.model.User;
-import org.machinesystems.UserMachine.repository.UserRepository;
 import org.machinesystems.UserMachine.security.JwtTokenUtil;
 import org.machinesystems.UserMachine.service.BlacklistedTokenService;
-import org.machinesystems.UserMachine.service.CustomUserDetailsService;
 import org.machinesystems.UserMachine.service.RefreshTokenService;
 import org.machinesystems.UserMachine.service.UserService;
 import org.machinesystems.UserMachine.service.AuditService;  // Import the AuditService
@@ -19,10 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,13 +28,6 @@ import jakarta.mail.MessagingException;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
@@ -51,8 +37,6 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private RefreshTokenService refreshTokenService;
@@ -105,50 +89,24 @@ public class AuthController {
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
-
+    
         try {
+            // Call AuthService to handle the login logic
+            String accessToken = authService.loginUser(username, password);
             User user = userService.getUserByUsername(username);
-
-            // Check if the user has exceeded maximum login attempts
-            if (user.getLoginAttempts() >= 5) {
-                user.setAccountLocked(true);
-                userRepository.save(user);
-                auditService.logAuditEvent("ERROR", "AuthController", "User account locked: " + username, Thread.currentThread().getName(), null);
-                return ResponseEntity.status(403).body(Map.of("message", "User account locked due to too many failed login attempts. Please contact support."));
-            }
-
-            // Authenticate the user
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-
-            // Load user details
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
-            if (!userDetails.isEnabled()) {
-                auditService.logAuditEvent("ERROR", "AuthController", "User login failed - not authenticated: " + username, Thread.currentThread().getName(), null);
-                return ResponseEntity.status(400).body(Map.of("message", "User is not authenticated"));
-            }
-
-            // Reset login attempts on successful login
-            userService.resetLoginAttempts(username);
-
-            // Convert GrantedAuthority to Set<String> for roles
-            Set<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
-
-            // Generate access token and refresh token
-            String accessToken = jwtTokenUtil.generateAccessToken(userDetails.getUsername(), roles);
+    
+            // Generate refresh token and log successful login
             String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
-
             auditService.logAuditEvent("INFO", "AuthController", "User logged in: " + username, Thread.currentThread().getName(), null);
-
+    
             return ResponseEntity.ok(Map.of("accessToken", accessToken, "refreshToken", refreshToken));
-
-        } catch (Exception e) {
-            auditService.logAuditEvent("ERROR", "AuthController", "Login failed for: " + username, Thread.currentThread().getName(), e.getMessage());
-            userService.incrementLoginAttempts(username);
-            return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password"));
+    
+        } catch (IllegalArgumentException e) {
+            // Log error if login fails
+            auditService.logAuditEvent("ERROR", "AuthController", "Login failed: " + username, Thread.currentThread().getName(), e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
         }
     }
-
     // Token refresh
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {

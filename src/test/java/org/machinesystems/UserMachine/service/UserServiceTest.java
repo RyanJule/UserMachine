@@ -31,7 +31,7 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JavaMailSender mailSender;  // Mock the mail sender
+    private JavaMailSender mailSender;
 
     @InjectMocks
     private UserService userService;
@@ -56,24 +56,25 @@ class UserServiceTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
 
-        // Mock the MimeMessage creation
+        // Mock the MimeMessage creation and configuration
         MimeMessage mimeMessage = mock(MimeMessage.class);
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-
-        // Mock the behavior for the MimeMessageHelper
-        doNothing().when(mailSender).send(any(MimeMessage.class));  // Mock the sending email
+        
+        // Stub out sendVerificationEmail method to prevent actual invocation
+        UserService spyUserService = spy(userService);
+        doNothing().when(spyUserService).sendVerificationEmail(any(User.class), anyString());
 
         // Use Mockito's Answer to return the same user passed into save()
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Call the service
-        User registeredUser = userService.registerUser("john", "john@example.com", "password", Set.of("ROLE_USER"));
+        User registeredUser = spyUserService.registerUser("john", "john@example.com", "password", Set.of("ROLE_USER"));
 
-        // Verify that the password was encoded
+        // Verify that the password was encoded and the user was saved
         assertEquals("hashedPassword", registeredUser.getPassword());
         verify(userRepository).save(any(User.class));
     }
-
+    
     @Test
     void testRegisterUser_UserExists() {
         // Mock the scenario where the username already exists

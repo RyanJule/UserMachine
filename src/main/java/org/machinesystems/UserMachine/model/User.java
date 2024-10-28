@@ -45,6 +45,8 @@ public class User {
     @Column(name = "reset_password_expiry")
     private Date resetPasswordExpiry;
 
+    public static final int MAX_LOGIN_ATTEMPTS = 5;
+
     // Getters and setters
     public Long getId() {
         return id;
@@ -132,6 +134,13 @@ public class User {
 
     public void setAccountLocked(boolean accountLocked) {
         this.accountLocked = accountLocked;
+    }
+
+    public void incrementLoginAttempts() {
+        this.loginAttempts++;
+        if (this.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+            this.accountLocked = true;
+        }
     }
 
     public void resetLoginAttempts() {
