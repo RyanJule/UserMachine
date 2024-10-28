@@ -29,7 +29,7 @@ spec:
         - name: JWT_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: smtp-secret
+              name: jwt-secret
               key: JWT_SECRET_KEY
         - name: DB_HOST
           value: "postgres-service"
