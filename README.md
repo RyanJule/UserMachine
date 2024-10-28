@@ -13,7 +13,7 @@ Initial Setup
 
 Clone the Repository
 
-bash
+    bash
 
     git clone https://github.com/yourusername/UserMachine.git
     cd UserMachine
@@ -24,7 +24,7 @@ Environment Variables
 
 Add the following variables to your ~/.bashrc (or ~/.zshrc) file to make them persistent across sessions:
 
-bash
+    bash
 
   # Database Configuration (Configured host and port here are for development/test environments)
   export DB_HOST=localhost
@@ -42,7 +42,7 @@ bash
   
 After adding these lines, reload the shell configuration:
 
-bash
+    bash
 
   source ~/.bashrc
 
@@ -52,7 +52,7 @@ Store sensitive data, such as database and SMTP credentials, in Kubernetes secre
 
     Create Kubernetes Secrets
 
-bash
+    bash
   
   kubectl create secret generic db-secret \
     --from-literal=POSTGRES_DB=$DB_NAME \
@@ -95,13 +95,13 @@ Deploying to Kubernetes
 
     Start Minikube (or ensure your Kubernetes cluster is running)
 
-bash
+    bash
 
   minikube start
 
 Apply Persistent Volume Claim
 
-bash
+    bash
 
   kubectl apply -f pvc.yaml
 
@@ -109,7 +109,7 @@ Deploy PostgreSQL and UserMachine Services
 
     PostgreSQL Deployment
 
-bash
+    bash
 
   kubectl apply -f postgresql-deployment.yaml
 
@@ -119,19 +119,19 @@ For local development, you can use maven to run the application with port forwar
 
 In one terminal:
 
-bash
+    bash
 
   kubectl port-forward service/postgres-service 5432:5432
 
 In a separate terminal with cwd ~/UserMachine:
 
-bash
+    bash
 
   mvn spring-boot:run
 
 UserMachine Deployment
 
-bash
+    bash
 
     kubectl apply -f deployment.yaml
 
@@ -139,7 +139,7 @@ Expose Services
 
 If using Minikube, expose the service to make it accessible from outside the cluster:
 
-bash
+    bash
 
   minikube service usermachine-service
 
@@ -149,7 +149,7 @@ Verify Deployment
 
 Confirm that both containers are running:
 
-bash
+    bash
 
   kubectl get pods
 
@@ -157,7 +157,7 @@ Testing Application Availability
 
 Use an HTTP client (such as curl or Postman) to send a request to verify if the API is accessible:
 
-bash
+    bash
 
     curl http://<external-ip>:<port>/api/endpoint
 
@@ -173,13 +173,13 @@ Useful Commands
 
     Check logs for a specific pod
 
-bash
+    bash
 
   kubectl logs <pod-name>
 
 Delete all Kubernetes resources
 
-bash
+    bash
 
     kubectl delete all --all
 
