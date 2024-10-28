@@ -11,7 +11,7 @@ Prerequisites
 
 Initial Setup
 
-    Clone the Repository
+Clone the Repository
 
 bash
 
