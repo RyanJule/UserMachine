@@ -1,205 +1,233 @@
-UserMachine is an API for user registration, authentication, and authorization using PostgreSQL and Spring Boot. The app includes JWT-based security, role-based access, and email verification with an SMTP configuration.
+---
+
+# UserMachine API
+
+## Overview
+
+UserMachine is a boilerplate API for user registration, authentication, and authorization using PostgreSQL and Spring Boot. The app includes JWT-based security, role-based access, and email verification with an SMTP configuration.
 
 This guide provides setup instructions for deploying the application locally and in a Kubernetes cluster, configuring environment variables, and managing SMTP credentials.
-Prerequisites
 
-    Docker - Ensure you have Docker installed to build and run containers locally.
-    Kubernetes - Install Minikube or set up access to an existing Kubernetes cluster.
-    kubectl - Kubernetes command-line tool to manage cluster resources.
-    Java 17 - Required for building and running the Spring Boot application.
-    PostgreSQL - Used for the production environment.
+---
 
-Initial Setup
+## Prerequisites
 
-Clone the Repository
+1. **Docker** - Ensure you have Docker installed to build and run containers locally.
+2. **Kubernetes** - Install Minikube or set up access to an existing Kubernetes cluster.
+3. **kubectl** - Kubernetes command-line tool to manage cluster resources.
+4. **Java 17** - Required for building and running the Spring Boot application.
+5. **PostgreSQL** - Used for the production environment.
 
-    bash
+---
 
-    git clone https://github.com/yourusername/UserMachine.git
-    cd UserMachine
+## Initial Setup
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/UserMachine.git
+cd UserMachine
+```
 
 Define essential environment variables for the application to connect to PostgreSQL, authenticate with an SMTP server, and handle JWT tokens.
 
-Environment Variables
+### Environment Variables
 
-Add the following variables to your ~/.bashrc (or ~/.zshrc) file to make them persistent across sessions:
+Add the following variables to your `~/.bashrc` (or `~/.zshrc`) file to make them persistent across sessions:
 
-    bash
+```bash
+# Database Configuration (Configured host and port here are for development/test environments)
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=your_database_name
+export DB_USERNAME=your_database_username
+export DB_PASSWORD=your_database_password
 
-  # Database Configuration (Configured host and port here are for development/test environments)
-  export DB_HOST=localhost
-  export DB_PORT=5432
-  export DB_NAME=your_database_name
-  export DB_USERNAME=your_database_username
-  export DB_PASSWORD=your_database_password
-  
-  # SMTP Configuration for Email
-  export SMTP_EMAIL=your_smtp_username
-  export SMTP_PASSWORD=your_smtp_password
-  
-  # JWT Secret Key
-  export JWT_SECRET=your_jwt_secret_key
-  
+# SMTP Configuration for Email
+export SMTP_EMAIL=your_smtp_username
+export SMTP_PASSWORD=your_smtp_password
+
+# JWT Secret Key
+export JWT_SECRET=your_jwt_secret_key
+```
+
 After adding these lines, reload the shell configuration:
 
-    bash
+```bash
+source ~/.bashrc
+```
 
-  source ~/.bashrc
-
-Kubernetes Secrets Configuration
+### Kubernetes Secrets Configuration
 
 Store sensitive data, such as database and SMTP credentials, in Kubernetes secrets.
 
-    Create Kubernetes Secrets
+1. **Create Kubernetes Secrets**
 
-    bash
-  
-  kubectl create secret generic db-secret \
-    --from-literal=POSTGRES_DB=$DB_NAME \
-    --from-literal=POSTGRES_PASSWORD=$DB_USERNAME \
-    --from-literal=POSTGRES_USER=$DB_PASSWORD
-  
-  kubectl create secret generic smtp-secret \
-    --from-literal=SMTP_HOST=$SMTP_HOST \
-    --from-literal=SMTP_PORT=$SMTP_PORT \
-    --from-literal=SMTP_EMAIl=$SMTP_EMAIL \
-    --from-literal=SMTP_PASSWORD=$SMTP_PASSWORD
-    
-  kubectl create secret generic jwt-secret \
-    --from-literal=JWT_SECRET_KEY=$JWT_SECRET_KEY
-  
-Reference Secrets in Deployment Files
+   ```bash
+   kubectl create secret generic db-secret \
+     --from-literal=POSTGRES_DB=$DB_NAME \
+     --from-literal=POSTGRES_USER=$DB_USERNAME \
+     --from-literal=POSTGRES_PASSWORD=$DB_PASSWORD
 
-In your deployment.yaml file, reference the secrets:
+   kubectl create secret generic smtp-secret \
+     --from-literal=SMTP_EMAIL=$SMTP_EMAIL \
+     --from-literal=SMTP_PASSWORD=$SMTP_PASSWORD
 
-yaml
+   kubectl create secret generic jwt-secret \
+     --from-literal=JWT_SECRET=$JWT_SECRET
+   ```
 
-    env:
-      - name: DB_HOST
-        valueFrom:
-          secretKeyRef:
-            name: db-secret
-            key: DB_HOST
-      - name: SMTP_HOST
-        valueFrom:
-          secretKeyRef:
-            name: smtp-secret
-            key: SMTP_HOST
-      - name: JWT_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: jwt-secret
-            key: JWT_SECRET
+2. **Reference Secrets in Deployment Files**
 
-Deploying to Kubernetes
+   In your `deployment.yaml` file, reference the secrets:
 
-    Start Minikube (or ensure your Kubernetes cluster is running)
+   ```yaml
+   env:
+     - name: DB_HOST
+       valueFrom:
+         secretKeyRef:
+           name: db-secret
+           key: DB_HOST
+     - name: SMTP_HOST
+       valueFrom:
+         secretKeyRef:
+           name: smtp-secret
+           key: SMTP_HOST
+     - name: JWT_SECRET
+       valueFrom:
+         secretKeyRef:
+           name: jwt-secret
+           key: JWT_SECRET
+   ```
 
-    bash
+---
 
-  minikube start
+## Deploying to Kubernetes
 
-Apply Persistent Volume Claim
+### Start Minikube (or ensure your Kubernetes cluster is running)
 
-    bash
+```bash
+minikube start
+```
 
-  kubectl apply -f pvc.yaml
+### Apply Persistent Volume Claim
 
-Deploy PostgreSQL and UserMachine Services
+```bash
+kubectl apply -f pvc.yaml
+```
 
-    PostgreSQL Deployment
+### Deploy PostgreSQL and UserMachine Services
 
-    bash
+- **PostgreSQL Deployment**
 
+  ```bash
   kubectl apply -f postgresql-deployment.yaml
+  ```
 
-Running Locally with Maven:
+### Running Locally with Maven:
 
-For local development, you can use maven to run the application with port forwarding from the PostgreSQL container.
+For local development, you can use Maven to run the application with port forwarding from the PostgreSQL container.
 
-In one terminal:
+1. In one terminal, forward the PostgreSQL port:
 
-    bash
+   ```bash
+   kubectl port-forward service/postgres-service 5432:5432
+   ```
 
-  kubectl port-forward service/postgres-service 5432:5432
+2. In a separate terminal, with `cwd` in `~/UserMachine`, run:
 
-In a separate terminal with cwd ~/UserMachine:
+   ```bash
+   mvn spring-boot:run
+   ```
 
-    bash
+### UserMachine Deployment
 
-  mvn spring-boot:run
+```bash
+kubectl apply -f deployment.yaml
+```
 
-UserMachine Deployment
-
-    bash
-
-    kubectl apply -f deployment.yaml
-
-Expose Services
+### Expose Services
 
 If using Minikube, expose the service to make it accessible from outside the cluster:
 
-    bash
-
-  minikube service usermachine-service
+```bash
+minikube service usermachine-service
+```
 
 Alternatively, for production deployments, use a Kubernetes LoadBalancer or Ingress.
 
-Verify Deployment
+### Verify Deployment
 
 Confirm that both containers are running:
 
-    bash
+```bash
+kubectl get pods
+```
 
-  kubectl get pods
+### Testing Application Availability
 
-Testing Application Availability
+Use an HTTP client (such as `curl` or Postman) to send a request to verify if the API is accessible:
 
-Use an HTTP client (such as curl or Postman) to send a request to verify if the API is accessible:
+```bash
+curl http://<external-ip>:<port>/api/endpoint
+```
 
-    bash
+---
 
-    curl http://<external-ip>:<port>/api/endpoint
-
-SMTP Configuration
+## SMTP Configuration
 
 To use the email verification and password reset features, set up an SMTP account.
 
-    Choose an SMTP Provider (e.g., Gmail, SendGrid, Amazon SES).
-    Add SMTP Credentials as environment variables (as outlined above).
-    Configure SMTP Port based on your provider (typically 587 for TLS or 465 for SSL).
+1. **Choose an SMTP Provider** (e.g., Gmail, SendGrid, Amazon SES).
+2. **Add SMTP Credentials** as environment variables (as outlined above).
+3. **Configure SMTP Port/Host** This is done in application.properties, based on your provider (typically `587` for TLS or `465` for SSL).
 
-Useful Commands
+---
 
-    Check logs for a specific pod
+## Useful Commands
 
-    bash
+- **Check logs for a specific pod**
 
+  ```bash
   kubectl logs <pod-name>
+  ```
 
-Delete all Kubernetes resources
+- **Delete all Kubernetes resources**
 
-    bash
+  ```bash
+  kubectl delete all --all
+  ```
 
-    kubectl delete all --all
+---
 
-Troubleshooting
+## Troubleshooting
 
-    Cannot Connect to Database:
-        Verify database credentials in both your environment variables and Kubernetes secrets.
-        Check if the PostgreSQL pod is running: kubectl get pods.
+1. **Cannot Connect to Database**:
+   - Verify database credentials in both your environment variables and Kubernetes secrets.
+   - Check if the PostgreSQL pod is running:
 
-    SMTP Email Not Sent:
-        Verify SMTP credentials.
-        Check your SMTP provider’s limitations and restrictions.
+     ```bash
+     kubectl get pods
+     ```
 
-    Application Crash or Fails to Start:
-        Check application logs using kubectl logs <pod-name> for more details.
-        Ensure all environment variables are correctly set.
+2. **SMTP Email Not Sent**:
+   - Verify SMTP credentials.
+   - Check your SMTP provider’s limitations and restrictions.
 
-Contributing
+3. **Application Crash or Fails to Start**:
+   - Check application logs using `kubectl logs <pod-name>` for more details.
+   - Ensure all environment variables are correctly set.
+
+---
+
+## Contributing
 
 Contributions are welcome! Please submit pull requests with clear descriptions of your changes.
-License
+
+## License
 
 This project is licensed under the MIT License.
+
+--- 
+
+This README provides complete instructions for deploying the UserMachine API both locally and in Kubernetes, including environment variable setup, testing, and SMTP configuration for email functionality.
