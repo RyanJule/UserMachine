@@ -12,10 +12,10 @@ import java.util.Set;
 @Component
 public class JwtTokenUtil {
 
-    static final String SECRET_KEY = DotEnvUtil.SECRET_KEY;  // Use a secure key in production
+    static final String JWT_SECRET_KEY = DotEnvUtil.JWT_SECRET_KEY;  // Use a secure key in production
     // Generate a secret signing key
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(JWT_SECRET_KEY.getBytes());
     }
 
     // Generate JWT access token
