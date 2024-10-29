@@ -130,21 +130,24 @@ class UserControllerTest {
         verify(auditService).logAuditEvent("INFO", "UserController", "User deleted", Thread.currentThread().getName(), null);
     }
 
-    @SuppressWarnings({ "null", "rawtypes" })
+    @SuppressWarnings({ "null"})
     @Test
     void testUpdateProfile_ProfileUpdateFails() {
         String authorizationHeader = "Bearer oldAccessToken";
         Map<String, String> request = new HashMap<>();
         request.put("username", "newJohn");
         request.put("email", "newJohn@example.com");
-
-        when(userService.updateUserProfile(anyString(), anyString(), anyString())).thenThrow(new RuntimeException("Profile update failed"));
-
+    
+        // Simulate an exception when updating the profile
+        when(userService.updateUserProfile(anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("Profile update failed"));
+    
+        // Invoke the controller method
         ResponseEntity<?> response = userController.updateProfile(userDetails, authorizationHeader, request);
-
-        // Verify failure response and audit logging
+    
+        // Verify the failure response and that the audit log was called as expected
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Profile update failed", ((Map) response.getBody()).get("message"));
+        assertEquals("Profile update failed", ((Map<?, ?>) response.getBody()).get("message"));
         verify(auditService).logAuditEvent("ERROR", "UserController", "Profile update failed", Thread.currentThread().getName(), "Profile update failed");
     }
 

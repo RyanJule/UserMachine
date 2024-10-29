@@ -76,7 +76,6 @@ public class UserController {
             return ResponseEntity.ok(updatedUser);
 
         } catch (Exception e) {
-            e.printStackTrace();
             auditService.logAuditEvent("ERROR", "UserController", "Profile update failed", Thread.currentThread().getName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Profile update failed"));
         }
@@ -118,7 +117,6 @@ public class UserController {
             return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
 
         } catch (Exception e) {
-            e.printStackTrace();
             auditService.logAuditEvent("ERROR", "UserController", "User deletion failed", Thread.currentThread().getName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Failed to delete user"));
         }
