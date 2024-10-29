@@ -113,19 +113,17 @@ public class AuthController {
         String refreshTokenStr = request.get("refreshToken");
 
         try {
-            var refreshToken = refreshTokenService.findByToken(refreshTokenStr).orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+            var refreshToken = refreshTokenService.findByToken(refreshTokenStr)
+                    .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
 
-            // Check if the refresh token is expired
             refreshTokenService.verifyExpiration(refreshToken);
 
             User user = refreshToken.getUser();
 
-            // Blacklist the current access token
             String oldAccessToken = request.get("accessToken");
             Date oldAccessTokenExpirationDate = jwtTokenUtil.getExpirationDateFromToken(oldAccessToken);
             blacklistedTokenService.blacklistToken(oldAccessToken, oldAccessTokenExpirationDate);
 
-            // Generate a new access token
             Set<String> roles = user.getRoles();
             String newAccessToken = jwtTokenUtil.generateAccessToken(user.getUsername(), roles);
 
@@ -134,9 +132,11 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "refreshToken", refreshTokenStr));
         } catch (Exception e) {
             auditService.logAuditEvent("ERROR", "AuthController", "Token refresh failed", Thread.currentThread().getName(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Token refresh failed: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Token refresh failed: " + e.getMessage()));
         }
     }
+
 
     // Logout user
     @PostMapping("/logout")

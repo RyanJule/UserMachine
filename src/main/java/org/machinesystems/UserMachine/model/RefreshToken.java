@@ -21,6 +21,14 @@ public class RefreshToken {
     @Column(nullable = false)
     private Instant expiryDate;
 
+    public RefreshToken() {}
+
+    public RefreshToken(String token, User user, Instant expiryDate) {
+        this.token = token;
+        this.user = user;
+        this.expiryDate = expiryDate;
+    }
+
     // Getters and setters
     public Long getId() {
         return id;
