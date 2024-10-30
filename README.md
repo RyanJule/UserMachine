@@ -25,7 +25,7 @@ This guide provides setup instructions for deploying the application locally and
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/UserMachine.git
+git clone https://github.com/RyanJule/UserMachine.git
 cd UserMachine
 ```
 
