@@ -210,6 +210,16 @@ Give the server a name and select the Connection tab. The Host name/address is c
 
 ---
 
+## Migrations Workflow
+
+UserMachine uses flybase to track migrations for lift + shift purposes. If you make a change to your entity classes, make sure to write the changes to an sql file and save them to UserMachine/src/main/db/migration/postgresql/V<MigrationNumber>__description_of_change.sql and redeploy deployment.yaml
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+---
+
 ## Useful Commands
 
 - **Check logs for a specific pod**
