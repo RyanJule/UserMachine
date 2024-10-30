@@ -105,6 +105,14 @@
 			<artifactId>byte-buddy</artifactId>
 			<version>1.12.22</version> <!-- Make sure to use the latest version -->
 		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
 
 	</dependencies>
 
