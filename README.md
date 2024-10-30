@@ -184,6 +184,32 @@ To use the email verification and password reset features, set up an SMTP accoun
 
 ---
 
+## pgAdmin Configuration
+
+To use the pgAdmin console, first configure your console credentials using a kubernetes secret:
+
+```bash
+kubectl create secret generic pgadmin-secrets \
+  --from-literal=PGADMIN_DEFAULT_EMAIL=admin@example.com \
+  --from-literal=PGADMIN_DEFAULT_PASSWORD=admin
+```
+
+then deploy pgadmin-deployment.yaml:
+
+```bash
+kubectl apply -f pgadmin-deployment.yaml
+```
+At this point you can access the pgAdmin console from your favorite browser on the node's ip and port:
+
+```
+http://<Node_IP>:<NodePort>
+```
+Log in with the credentials you established in pgadmin-secret, and then create the database connection by selecting 'Add New Server'
+
+Give the server a name and select the Connection tab. The Host name/address is configured in the db deployment to be postgres-service, and the port to be 5432. Populate the db credentials established in the postgres-secret and select 'Save' to establish the connection. More documentation for pgAdmin [here](https://www.pgadmin.org/docs/).
+
+---
+
 ## Useful Commands
 
 - **Check logs for a specific pod**
@@ -229,5 +255,3 @@ Contributions are welcome! Please submit pull requests with clear descriptions o
 This project is licensed under the MIT License.
 
 --- 
-
-This README provides complete instructions for deploying the UserMachine API both locally and in Kubernetes, including environment variable setup, testing, and SMTP configuration for email functionality.
