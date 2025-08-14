@@ -22,17 +22,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: postgres-secret
-              key: POSTGRES_USER
+              key: DB_USERNAME
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-secret
-              key: POSTGRES_PASSWORD
+              key: DB_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
               name: postgres-secret
-              key: POSTGRES_DB
+              key: DB_NAME
         resources:
           requests:
             memory: "256Mi"

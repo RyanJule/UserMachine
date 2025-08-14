@@ -39,17 +39,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: postgres-secret
-              key: POSTGRES_DB
+              key: DB_NAME
         - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
               name: postgres-secret
-              key: POSTGRES_USER
+              key: DB_USERNAME
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-secret
-              key: POSTGRES_PASSWORD
+              key: DB_PASSWORD
         ports:
         - containerPort: 8080           # Port for your app
         resources:

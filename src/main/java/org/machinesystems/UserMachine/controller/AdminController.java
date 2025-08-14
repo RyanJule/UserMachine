@@ -1,10 +1,14 @@
 package org.machinesystems.UserMachine.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Map;
+import java.util.Set;
+
 import org.machinesystems.UserMachine.model.User;
+import org.machinesystems.UserMachine.service.AuditService; // Import AuditService
 import org.machinesystems.UserMachine.service.AuthService;
 import org.machinesystems.UserMachine.service.RefreshTokenService;
 import org.machinesystems.UserMachine.service.UserService;
-import org.machinesystems.UserMachine.service.AuditService; // Import AuditService
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,10 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.mail.MessagingException;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/admin")
